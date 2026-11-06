@@ -1,0 +1,46 @@
+# Daily ownership check. Not live; included to show how this would be scheduled.
+# Scrapes the operator website, compares it with the CRM, and queues NEW proposals.
+# It never writes to the CRM; approvals happen in the review app.
+name: daily-ownership-check
+
+on:
+  schedule:
+    - cron: "0 11 * * *"   # 11:00 UTC = 6:00 AM Eastern, before reps start their day
+  workflow_dispatch: {}     # manual "run now" button
+
+concurrency: daily-ownership-check   # never two runs at once (they share the review queue)
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      # The review queue (SQLite) and the daily website snapshots are state: they are what
+      # stops the pipeline from re-proposing decided items and what powers the 404 re-check.
+      # Restore the latest copy, run, then save a new copy.
+      - uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: pipeline-state-${{ github.run_id }}
+          restore-keys: pipeline-state-
+
+      - run: python pipeline.py
+        env:
+          API_TOKEN: ${{ secrets.CRM_API_TOKEN }}
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data
+          key: pipeline-state-${{ github.run_id }}
+
+      - uses: actions/upload-artifact@v4   # the plain-English report of what was found today
+        with:
+          name: proposed-changes
+          path: data/reports/

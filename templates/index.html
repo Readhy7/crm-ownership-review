@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM Ownership Review</title>
+<style>
+  :root {
+    --ink: #17212b; --muted: #667085; --faint: #98a2b3; --line: #e4e7ec; --bg: #f4f5f2; --card: #ffffff;
+    --brand: #234b40; --brand-2: #2e5d50; --gold: #c9a227;
+    --own: #d97706; --fix: #2563eb; --contact: #94a3b8;
+    --ok: #067647; --ok-bg: #ecfdf3; --bad: #b42318; --bad-bg: #fef3f2; --warn-bg: #fffaeb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--bg); }
+  a { color: var(--fix); }
+
+  header { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; }
+  .head { max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .head h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: .01em; }
+  .head .sub { font-size: 12.5px; opacity: .8; }
+  .head .spacer { flex: 1; }
+  .stat { background: rgba(255,255,255,.12); border-radius: 8px; padding: 4px 12px; font-size: 13px; }
+  .stat b { font-size: 15px; margin-right: 4px; }
+  .head a.link { color: #fff; opacity: .9; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.4); }
+  .btn-run { background: var(--gold); color: #1d1a0f; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+
+  .toolbar { position: sticky; top: 0; z-index: 5; background: rgba(244,245,242,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .tools { max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search { flex: 1 1 320px; position: relative; }
+  .search input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; background: #fff; outline: none; }
+  .search input:focus { border-color: var(--brand-2); box-shadow: 0 0 0 3px rgba(46,93,80,.15); }
+  .search svg { position: absolute; left: 11px; top: 11px; color: var(--faint); }
+  .search kbd { position: absolute; right: 10px; top: 8px; font: 11px monospace; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; background: #fafafa; }
+  select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tabs a { padding: 6px 11px; border-radius: 999px; text-decoration: none; color: var(--muted); font-size: 13px; }
+  .tabs a:hover { background: #e9ebe6; }
+  .tabs a.on { background: var(--ink); color: #fff; }
+  .count { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 18px 24px 80px; }
+  .runbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 6px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+  .tile .n { font-size: 22px; font-weight: 600; line-height: 1.2; }
+  .tile .l { font-size: 12px; color: var(--muted); }
+  .runmeta { color: var(--faint); font-size: 12px; margin: 4px 2px 0; }
+
+  .flash { margin: 14px 0 0; padding: 10px 14px; border-radius: 10px; font-weight: 500; }
+  .flash.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid #abefc6; }
+  .flash.err { background: var(--bad-bg); color: var(--bad); border: 1px solid #fecdca; }
+
+  .facility { margin-top: 26px; }
+  .facility h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .facility h2 .n { font-size: 11.5px; font-weight: 500; color: var(--muted); background: #e9ebe6; border-radius: 999px; padding: 1px 8px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--contact); border-radius: 12px;
+          padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .card.p1 { border-left-color: var(--own); } .card.p2 { border-left-color: var(--fix); }
+  .card.st-applied { opacity: .92; } .card.st-rejected { opacity: .7; }
+  .top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .title { font-weight: 600; font-size: 15px; }
+  .badges { margin-top: 4px; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .b { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #f2f4f7; color: #344054; }
+  .b.own { background: #fef0c7; color: #93370d; } .b.fix { background: #dbeafe; color: #1e40af; } .b.contact { background: #f1f5f9; color: #475569; }
+  .b.high { background: #dcfae6; color: #085d3a; } .b.medium { background: #fef7c3; color: #854a0e; } .b.low { background: #fee4e2; color: #912018; }
+  .b.applied { background: var(--ok-bg); color: var(--ok); } .b.rejected { background: #eaecf0; color: #475467; }
+  .b.failed, .b.stale { background: var(--bad-bg); color: var(--bad); }
+  .id { color: var(--faint); font-size: 11.5px; }
+  .summary { margin: 8px 0 0; color: #344054; }
+
+  .actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex-shrink: 0; width: 210px; }
+  .actions form { margin: 0; display: flex; gap: 6px; }
+  button { font: inherit; }
+  .approve { width: 100%; background: var(--ok); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+  .approve:hover { background: #05603a; }
+  .reject { background: #fff; color: var(--bad); border: 1px solid #fda29b; border-radius: 8px; padding: 6px 12px; font-weight: 600; cursor: pointer; }
+  .reject:hover { background: var(--bad-bg); }
+  .actions input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; }
+
+  .step { margin-top: 12px; }
+  .step .what { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .step .ref { font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 6px; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--faint); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; padding: 4px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px 10px; border-bottom: 1px solid #f2f4f7; vertical-align: top; }
+  td.f { color: var(--muted); width: 22%; }
+  .old { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .new { color: var(--ok); font-weight: 600; }
+
+  details { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  summary { cursor: pointer; color: var(--brand-2); font-weight: 500; font-size: 13px; }
+  ul.ev { margin: 8px 0 0; padding-left: 18px; color: #344054; font-size: 13px; }
+  ul.ev li { margin: 3px 0; }
+  .decided { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+  .err-box { margin-top: 8px; background: var(--bad-bg); color: var(--bad); padding: 8px 10px; border-radius: 8px; font-size: 13px; }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+  .flash.followup { background: #eef4ff; color: #1e3a8a; border: 1px solid #c7d7fe; }
+  .flash.followup a { font-weight: 600; } .flash .hint { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+  .b.followup { background: #e0eaff; color: #1e3a8a; }
+  .card.focus { box-shadow: 0 0 0 3px #84adff; transition: box-shadow .3s; }
+  @media (max-width: 720px) { .top { flex-direction: column; } .actions { width: 100%; } }
+</style>
+</head>
+<body>
+<header><div class="head">
+  <div><h1>CRM Ownership Review</h1><div class="sub">Bellhaven Senior Living · website vs. CRM</div></div>
+  <div class="spacer"></div>
+  <span class="stat"><b>{{counts.get('pending',0)}}</b>pending</span>
+  <span class="stat"><b>{{counts.get('applied',0)}}</b>applied</span>
+  <span class="stat"><b>{{counts.get('rejected',0)}}</b>rejected</span>
+  {% if counts.get('failed') or counts.get('stale') %}<span class="stat"><b>{{counts.get('failed',0)+counts.get('stale',0)}}</b>need attention</span>{% endif %}
+  <a class="link" href="/log">Change log</a>
+  <form method="post" action="/run" style="margin:0"><button class="btn-run">Run pipeline now</button></form>
+</div></header>
+
+<div class="toolbar"><div class="tools">
+  <label class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Search facility, change, person, type…" autocomplete="off">
+    <kbd>/</kbd>
+  </label>
+  <select id="kind"><option value="">All change types</option>
+    {% for k, v in kind_label.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}</select>
+  <select id="prio"><option value="">All priorities</option>
+    {% for k, v in prio.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}</select>
+  <div class="tabs">{% for s in ['pending','applied','rejected','failed','stale','all'] %}
+    <a href="?status={{s}}" class="{{'on' if s==status}}">{{s.capitalize()}}{% if s!='all' %} {{counts.get(s,0)}}{% endif %}</a>{% endfor %}</div>
+  <span class="count" id="count"></span>
+</div></div>
+
+<div class="wrap">
+  {% if last_summary %}
+  <div class="runbar">
+    <div class="tile"><div class="n">{{last_summary['locations']}}</div><div class="l">website locations</div></div>
+    {% for k, v in last_summary['classification'].items() %}
+    <div class="tile"><div class="n">{{v}}</div><div class="l">{{k}}</div></div>{% endfor %}
+  </div>
+  <p class="runmeta">Last pipeline run {{run['started_at'].replace('T', ' ')}}: {{last_summary['differences']}} differences found,
+    {{last_summary['new_proposals']}} new, {{last_summary['already_known']}} already decided or queued (not re-proposed).</p>
+  {% endif %}
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}
+    {% if cat == 'followup' %}
+    <div class="flash followup"><b>Follow-up created by this approval:</b>
+      {% for f in loads(m) %}<a href="#" class="focus" data-id="{{f['id']}}">{{f['title']}} (#{{f['id']}})</a>{% if not loop.last %} · {% endif %}{% endfor %}
+      <span class="hint">(click to show it, even if your search would hide it)</span></div>
+    {% else %}<div class="flash {{cat}}">{{m}}</div>{% endif %}
+  {% endfor %}{% endwith %}
+
+  {% if not groups %}<div class="empty">Nothing in this view.</div>{% endif %}
+  <div id="noresults" class="empty" style="display:none">No changes match your search.</div>
+
+  {% for facility, items in groups.items() %}
+  <section class="facility">
+    <h2>{{facility}} <span class="n">{{items|length}}</span></h2>
+    {% for p in items %}
+    {% set rows = describe(p) %}
+    <article class="card p{{p['priority']}} st-{{p['status']}}" id="card-{{p['id']}}" data-kind="{{p['kind']}}" data-prio="{{p['priority']}}"
+      data-search="{{ (facility ~ ' ' ~ p['title'] ~ ' ' ~ p['summary'] ~ ' ' ~ kind_label[p['kind']] ~ ' ' ~ prio[p['priority']] ~ ' ' ~ p['confidence'] ~ ' #' ~ p['id'] ~ ' ' ~ (evidence(p)|join(' ')))|lower }}">
+      <div class="top">
+        <div>
+          <div class="title">{{p['title']}}</div>
+          <div class="badges">
+            <span class="b {{ {1:'own',2:'fix',3:'contact'}[p['priority']] }}">{{prio[p['priority']]}}</span>
+            <span class="b">{{kind_label[p['kind']]}}</span>
+            <span class="b {{p['confidence']}}">{{p['confidence']}} confidence</span>
+            {% if p['status'] != 'pending' %}<span class="b {{p['status']}}">{{p['status']}}</span>{% endif %}
+            {% if p['origin'] %}<span class="b followup">Follow-up from your approval of #{{p['origin']}}</span>{% endif %}
+            <span class="id">#{{p['id']}}</span>
+          </div>
+          <p class="summary">{{p['summary']}}</p>
+        </div>
+        {% if p['status'] in ('pending','failed','stale') %}
+        <div class="actions">
+          <form method="post" action="/proposals/{{p['id']}}/approve"><button class="approve">Approve</button></form>
+          <form method="post" action="/proposals/{{p['id']}}/reject"><input name="note" placeholder="Reason (optional)"><button class="reject">Reject</button></form>
+        </div>{% elif p['status'] == 'rejected' %}
+        <div class="actions">
+          <form method="post" action="/proposals/{{p['id']}}/reopen"><button class="reject" style="color:var(--ink);width:100%">Reopen</button></form>
+        </div>{% endif %}
+      </div>
+
+      {% for what, ref, changes, link in rows %}
+      <div class="step">
+        <span class="what">{{what}}</span>
+        <span class="ref">{% if link %}<a href="{{link}}" target="_blank">{{ref}}</a>{% else %}{{ref}}{% endif %}</span>
+        {% if changes %}<table><tr><th>Field</th><th>Now</th><th>After approval</th></tr>
+          {% for f, old, new in changes %}<tr><td class="f">{{f}}</td><td>{% if old %}<span class="old">{{old}}</span>{% endif %}</td><td class="new">{{new}}</td></tr>{% endfor %}
+        </table>{% endif %}
+      </div>{% endfor %}
+
+      <details><summary>Evidence ({{evidence(p)|length}})</summary>
+        <ul class="ev">{% for e in evidence(p) %}<li>{{e}}</li>{% endfor %}</ul></details>
+
+      {% if p['status'] != 'pending' %}
+      <div class="decided">Decided {{(p['decided_at'] or '').replace('T',' ')}}{% if p['reviewer_note'] %} · “{{p['reviewer_note']}}”{% endif %}
+        {% for lbl, link in result_links(p) %} · <a href="{{link}}" target="_blank">{{lbl}} in CRM ↗</a>{% endfor %}</div>
+      {% if p['result'] and loads(p['result']).get('error') %}<div class="err-box">{{loads(p['result'])['error']}}</div>{% endif %}
+      {% endif %}
+    </article>{% endfor %}
+  </section>{% endfor %}
+</div>
+
+<script>
+  const q = document.getElementById('q'), kind = document.getElementById('kind'), prio = document.getElementById('prio');
+  const cards = [...document.querySelectorAll('.card')], sections = [...document.querySelectorAll('.facility')];
+  const store = {
+    get(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+  };
+
+  function apply() {
+    const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    cards.forEach(c => {
+      const ok = terms.every(t => c.dataset.search.includes(t))
+        && (!kind.value || c.dataset.kind === kind.value)
+        && (!prio.value || c.dataset.prio === prio.value);
+      c.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    sections.forEach(s => s.style.display = s.querySelector('.card:not([style*="none"])') ? '' : 'none');
+    document.getElementById('count').textContent = cards.length ? `Showing ${shown} of ${cards.length}` : '';
+    document.getElementById('noresults').style.display = cards.length && !shown ? '' : 'none';
+    store.set('q', q.value); store.set('kind', kind.value); store.set('prio', prio.value);
+  }
+
+  // Keep the search and scroll position across approve/reject (each one reloads the page).
+  q.value = store.get('q'); kind.value = store.get('kind'); prio.value = store.get('prio');
+  [q, kind, prio].forEach(el => el.addEventListener('input', apply));
+  document.querySelectorAll('.actions form').forEach(f => f.addEventListener('submit', () => store.set('y', String(window.scrollY))));
+  apply();
+  const y = Number(store.get('y')); if (y) { window.scrollTo(0, y); store.set('y', ''); }
+
+  // Follow-up links: clear any search/filter so the new card is visible, then jump to it.
+  document.querySelectorAll('a.focus').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    q.value = ''; kind.value = ''; prio.value = ''; apply();
+    const card = document.getElementById('card-' + a.dataset.id);
+    if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.classList.add('focus'); }
+  }));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); q.focus(); q.select(); }
+    if (e.key === 'Escape' && document.activeElement === q) { q.value = ''; apply(); q.blur(); }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Alternative to the GitHub Actions workflow: run on a server that also hosts the review app,
+# so the review queue (data/review.db) lives in one place.
+# Every day at 6:00 AM server time; output appended to a log.
+0 6 * * * cd /opt/ownership-check && /usr/bin/python3 pipeline.py >> data/pipeline.log 2>&1
